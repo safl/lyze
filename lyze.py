@@ -12,12 +12,14 @@ import time
 import requests
 
 APP_NAME = "lyze"
-APP_VERS = "1.0.0"
+APP_MAJOR, APP_MINOR, APP_PATCH = (0, 1, 0)
+APP_VERS = "%d.%d.%d" % (APP_MAJOR, APP_MINOR, APP_PATCH)
 APP_DESC = "lyze - liberate your zendesk entities"
 APP_AUTH = "Simon A. F. Lund"
 APP_MAIL = "safl@safl.dk"
 APP_URL = "https://github.com/safl/lyze"
 APP_LICENSE = "Apache v2.0"
+APP_DESC = "liberate (export) your zendesk entities (tickets, events, etc.)"
 
 API_PREFIX = "/api/v2"
 API_CHECK = "/incremental/users/sample.json?start_time=0"

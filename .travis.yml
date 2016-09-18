@@ -1,0 +1,4 @@
+language: python
+script:
+    - pylint lyze.py
+    - pylint setup.py
