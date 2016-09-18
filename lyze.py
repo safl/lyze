@@ -11,6 +11,14 @@ import json
 import time
 import requests
 
+APP_NAME = "lyze"
+APP_VERS = "1.0.0"
+APP_DESC = "lyze - liberate your zendesk entities"
+APP_AUTH = "Simon A. F. Lund"
+APP_MAIL = "safl@safl.dk"
+APP_URL = "https://github.com/safl/lyze"
+APP_LICENSE = "Apache v2.0"
+
 API_PREFIX = "/api/v2"
 API_CHECK = "/incremental/users/sample.json?start_time=0"
 API_ENTITIES = {
@@ -18,16 +26,6 @@ API_ENTITIES = {
     "ticket_events": "/incremental/ticket_events.json?include=comment_events&start_time=%d",
     "organizations": "/incremental/organizations.json?start_time=%d",
     "users": "/incremental/users.json?include=abilities,open_ticket_count&start_time=%d"
-}
-
-ERR_MSG = {
-    429: """
-******************************************************************************
-You are being rate-limited, even though you are NOT violating rate limits.
-Contact zendesk support and tell them that you are not a DDOS attack, you
-just want your data.
-******************************************************************************
-"""
 }
 
 RATE = {
@@ -67,11 +65,8 @@ def api_request(cred, resource):
         return response
 
     print("Request(%s) failed(%d) limit(%d/%d)" % (
-        url, response.status_code, RATE["limit"], RATE["remaining"]
+        url, code, RATE["limit"], RATE["remaining"]
     ))
-
-    if code in ERR_MSG:
-        print(ERR_MSG[code])
 
     return None
 
