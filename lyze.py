@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
     lyze - liberate your zendesk entities
 
@@ -6,13 +6,19 @@
     entities available via "incremental export" from the zendesk stronghold.
 """
 import argparse
+import pprint
 import json
 import time
 import requests
 
 API_PREFIX = "/api/v2"
-API_URI = "/incremental/%s.json?start_time=%d"
-API_ENTITIES = ["tickets", "ticket_events", "organizations", "users"]
+API_CHECK = "/incremental/users/sample.json?start_time=0"
+API_ENTITIES = {
+    "tickets": "/incremental/tickets.json?start_time=%d",
+    "ticket_events": "/incremental/ticket_events.json?include=comment_events&start_time=%d",
+    "organizations": "/incremental/organizations.json?start_time=%d",
+    "users": "/incremental/users.json?start_time=%d"
+}
 
 ERR_MSG = {
     429: """
@@ -110,14 +116,13 @@ def cmd_liberate(args):
     """Liberate an entity from zendesk."""
 
     cred = Cred.from_json(args.cred)
-    entities = API_ENTITIES if args.entity == "ALL" else [args.entity]
+    entities = list(API_ENTITIES.keys()) if args.entity == "ALL" else [args.entity]
 
     for entity in entities:
         start_time = int(args.start_time)
         excess = 2
         while excess:
-            resource = API_URI % (entity, start_time)
-            response = api_request(cred, resource)
+            response = api_request(cred, API_ENTITIES[entity] % start_time)
 
             if not response:
                 print("Stopping: due to request error")
@@ -139,12 +144,12 @@ def cmd_liberate(args):
 
             start_time = end_time
 
-def cmd_check(cred):
+def cmd_check(args):
     """Check credentials."""
 
     cred = Cred.from_json(args.cred)
 
-    if api_request(cred, "/incremental/users/sample.json?start_time=0"):
+    if api_request(cred, API_CHECK):
         print("Credentials seem valid, enjoy.")
 
 def main():
@@ -170,7 +175,7 @@ def main():
         dest="entity",
         type=str,
         default="ALL",
-        choices=["ALL"] + API_ENTITIES,
+        choices=["ALL"] + list(API_ENTITIES.keys()),
         help="Entity to liberate"
     )
     p_liberate.add_argument(
