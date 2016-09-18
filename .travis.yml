@@ -1,4 +1,8 @@
 language: python
+addons:
+  apt:
+    packages:
+    - pylint
 script:
     - pylint lyze.py
     - pylint setup.py
