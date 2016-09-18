@@ -5,8 +5,8 @@
     As the name suggests, liberates your tickets, ticket_events, and other
     entities available via "incremental export" from the zendesk stronghold.
 """
+from __future__ import print_function
 import argparse
-import pprint
 import json
 import time
 import requests
@@ -14,10 +14,10 @@ import requests
 API_PREFIX = "/api/v2"
 API_CHECK = "/incremental/users/sample.json?start_time=0"
 API_ENTITIES = {
-    "tickets": "/incremental/tickets.json?start_time=%d",
+    "tickets": "/incremental/tickets.json?include=users,groups,organizations&start_time=%d",
     "ticket_events": "/incremental/ticket_events.json?include=comment_events&start_time=%d",
     "organizations": "/incremental/organizations.json?start_time=%d",
-    "users": "/incremental/users.json?start_time=%d"
+    "users": "/incremental/users.json?include=abilities,open_ticket_count&start_time=%d"
 }
 
 ERR_MSG = {
@@ -117,6 +117,11 @@ def cmd_liberate(args):
 
     cred = Cred.from_json(args.cred)
     entities = list(API_ENTITIES.keys()) if args.entity == "ALL" else [args.entity]
+    output = args.output
+    for ptn in ["{ENTITY}", "{STAMP_BEGIN}", "{STAMP_END}"]:
+        if ptn not in output:
+            print("Missing %s in --output(%s)" % (ptn, output))
+            return -1
 
     for entity in entities:
         start_time = int(args.start_time)
@@ -126,13 +131,18 @@ def cmd_liberate(args):
 
             if not response:
                 print("Stopping: due to request error")
-                break
+                return -1
 
             tickets = response.json()
 
             end_time = int(tickets["end_time"])
 
-            fname = "%s_%010d_%010d.json" % (entity, start_time, end_time)
+            fname = output.format(
+                ENTITY=entity,
+                STAMP_BEGIN=start_time,
+                STAMP_END=end_time
+            )
+
             with open(fname, 'w') as fjson:
                 json.dump(tickets, fjson, indent=4)
 
@@ -144,6 +154,8 @@ def cmd_liberate(args):
 
             start_time = end_time
 
+    return 0
+
 def cmd_check(args):
     """Check credentials."""
 
@@ -151,6 +163,9 @@ def cmd_check(args):
 
     if api_request(cred, API_CHECK):
         print("Credentials seem valid, enjoy.")
+        return 0
+
+    return -1
 
 def main():
     """
@@ -165,6 +180,13 @@ def main():
         type=str,
         default="lyze.cred",
         help='Path to credentials file'
+    )
+    p_main.add_argument(
+        "--output",
+        dest="output",
+        type=str,
+        default="{ENTITY}_{STAMP_BEGIN}-{STAMP_END}.json",
+        help="Filename and path format"
     )
 
     p_subs = p_main.add_subparsers()
